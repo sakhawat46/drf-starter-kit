@@ -5,7 +5,8 @@ from rest_framework.response import Response
 from rest_framework import status, permissions
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import SignupSerializer, LoginSerializer, PasswordResetRequestSerializer, PasswordResetChangeSerializer, ChangePasswordSerializer
+from .serializers import SignupSerializer, LoginSerializer, PasswordResetRequestSerializer, PasswordResetChangeSerializer, ChangePasswordSerializer, ProfileSerializer
+from apps.users.models import Profile
 from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
 from rest_framework import generics
 
@@ -15,8 +16,8 @@ User = get_user_model()
 def get_tokens_for_user(user):
     refresh = RefreshToken.for_user(user)
     return {
-        'refresh': str(refresh),
         'access': str(refresh.access_token),
+        'refresh': str(refresh),
     }
 
 class BaseAPIView(APIView):
@@ -42,13 +43,10 @@ class SignupView(BaseAPIView):
         if serializer.is_valid():
             user = serializer.save()
             tokens = get_tokens_for_user(user)
-            profile = getattr(user, 'profile', None)
             return self.success_response(
                 "User created successfully.",
                 data={
                     "email": user.email,
-                    "first_name": getattr(profile, 'first_name', ''),
-                    "last_name": getattr(profile, 'last_name', ''),
                     "tokens": tokens
                 }
             )
@@ -179,3 +177,21 @@ class DeleteAccountAPIView(APIView):
         # user.email = f"deleted_{user.id}_{user.email}" # For Soft delete
         # user.save() # For Soft delete
         return Response({"message": "Your account has been deleted."}, status=status.HTTP_200_OK)
+
+
+class ProfileAPIView(BaseAPIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
+
+    def get(self, request):
+        profile, _ = Profile.objects.get_or_create(user=request.user)
+        serializer = ProfileSerializer(profile, context={"request": request})
+        return self.success_response("Profile fetched successfully", data=serializer.data)
+
+    def patch(self, request):
+        profile, _ = Profile.objects.get_or_create(user=request.user)
+        serializer = ProfileSerializer(profile, data=request.data, partial=True, context={"request": request})
+        if serializer.is_valid():
+            serializer.save()
+            return self.success_response("Profile updated successfully", data=serializer.data)
+        return self.error_response("Validation error", data=serializer.errors)

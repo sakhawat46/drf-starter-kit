@@ -8,9 +8,9 @@ User = settings.AUTH_USER_MODEL
 # Subscription Plan Item
 class SubscriptionPackage(models.Model):
     BILLING_CHOICES = [
-        ('7 Days', '7 Days'),
-        ('14 Days', '14 Days'),
-        ('30 Days', '30 Days'),
+        ('7_days', '7 Days'),
+        ('14_days', '14 Days'),
+        ('30_days', '30 Days'),
     ]
 
     CYCLE_TYPE = [
@@ -53,6 +53,10 @@ class SubscriptionPackage(models.Model):
                 raise ValidationError({
                     "billing_cycle": "Preset billing cycle cannot be selected for custom plans."
                 })
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
 
     def get_billing_days(self):
         # Return billing duration in days
@@ -139,4 +143,4 @@ class IncomeReport(models.Model):
     total_income = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 
     def __str__(self):
-        return f"Income Report for {self.month.strftime('%B %Y')} - Total Income: {self.total_income}"
+        return f"Income Report - Total Income: {self.total_income}"

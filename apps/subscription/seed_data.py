@@ -2,12 +2,8 @@ from decimal import Decimal
 
 
 def seed_subscription_plans():
-    """Seed three preset plans (7, 14, 30 days) with feature rows.
+    """Seed three preset plans (7, 14, 30 days) with feature rows."""
 
-    Features' `include` field follows the screenshot: a cross means include=False.
-    """
-
-    # Import models lazily to avoid "Apps aren't loaded yet" when module is imported
     from apps.subscription.models import SubscriptionPackage, Features
 
     plans = [
@@ -50,12 +46,10 @@ def seed_subscription_plans():
             defaults={"price": plan_data["price"]},
         )
 
-        # Update price if different
         if not created and plan.price != plan_data["price"]:
             plan.price = plan_data["price"]
             plan.save()
 
-        # Create features; keep ordering consistent
         for idx, feat in enumerate(plan_data["features"], start=1):
             Features.objects.update_or_create(
                 subscriptionpackage=plan,
@@ -63,4 +57,4 @@ def seed_subscription_plans():
                 defaults={"include": feat["include"], "order": idx},
             )
 
-    print("✅ Subscription plans seeded successfully.")
+    print("Subscription plans seeded successfully.")
