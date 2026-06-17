@@ -121,15 +121,20 @@ class StripeWebhookAPIView(APIView):
                 session_id = session.get('id')
                 checkout_session = stripe.checkout.Session.retrieve(session_id, expand=['line_items'])
 
-                customer_email = session.get('customer_email')
+                customer_email = (
+                    session.get('customer_email')
+                    or session.get('customer_details', {}).get('email')
+                )
                 user = User.objects.filter(email=customer_email).first()
                 if not user:
+                    logger.warning("Stripe checkout completed but no matching user for email=%s", customer_email)
                     return HttpResponse(status=200)
 
                 line_items = checkout_session.get('line_items', {}).get('data', [])
                 price_id = line_items[0].get('price', {}).get('id') if line_items else None
                 package = SubscriptionPackage.objects.filter(stripe_price_id=price_id).first()
                 if not package:
+                    logger.warning("Stripe checkout completed but no package for price_id=%s", price_id)
                     return HttpResponse(status=200)
 
                 transaction_id = session.get('subscription') or session.get('payment_intent') or session_id
