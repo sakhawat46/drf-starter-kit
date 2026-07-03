@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 from rest_framework.exceptions import ValidationError
+from django.conf import settings
 
 from apps.users.models import Profile
 User = get_user_model()
@@ -68,7 +69,7 @@ class PasswordResetRequestSerializer(serializers.Serializer):
         send_mail(
             "Password Reset OTP",
             f"Your OTP for password reset is {user.otp}",
-            "sakhawatdev5@gmail.com",
+            settings.EMAIL_HOST_USER,
             [user.email],
             fail_silently=False,
         )
