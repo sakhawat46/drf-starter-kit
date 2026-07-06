@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 from rest_framework.exceptions import ValidationError
 from django.conf import settings
+from .utils import send_signup_otp_email
 
 from apps.users.models import Profile
 User = get_user_model()
@@ -66,13 +67,17 @@ class PasswordResetRequestSerializer(serializers.Serializer):
             raise serializers.ValidationError("User with this email does not exist.")
 
         user.generate_otp()
-        send_mail(
-            "Password Reset OTP",
-            f"Your OTP for password reset is {user.otp}",
-            settings.EMAIL_HOST_USER,
-            [user.email],
-            fail_silently=False,
-        )
+
+        # send_mail(
+        #     "Password Reset OTP",
+        #     f"Your OTP for password reset is {user.otp}",
+        #     settings.EMAIL_HOST_USER,
+        #     [user.email],
+        #     fail_silently=False,
+        # )
+
+        send_signup_otp_email(user)
+
         return value
 
 class PasswordResetChangeSerializer(serializers.Serializer):
